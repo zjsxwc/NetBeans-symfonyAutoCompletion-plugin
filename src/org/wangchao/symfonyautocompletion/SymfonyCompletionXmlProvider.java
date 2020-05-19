@@ -41,7 +41,7 @@ import org.openide.filesystems.FileUtil;
  * @author wangchao
  */
 @MimeRegistration(mimeType = "text/xml", service = CompletionProvider.class)
-public class SymfonyCompletionXmlProvider1 implements CompletionProvider {
+public class SymfonyCompletionXmlProvider implements CompletionProvider {
 
     public static ArrayList<File> getSourceFolders(Project project) {
         ArrayList<File> result = new ArrayList<File>();
