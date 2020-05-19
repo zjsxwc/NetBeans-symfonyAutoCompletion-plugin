@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem 1.2//EN"
+                            "http://www.netbeans.org/dtds/filesystem-1_2.dtd">
+<filesystem>
+    <folder name="Editors">
+        <folder name="text">
+            <folder name="x-php5">
+                <folder name="CompletionProviders">
+                    <file name="org-wangchao-symfonyautocompletion-SymfonyCompletionPHPProvider.instance">
+                        <!--org.wangchao.symfonyautocompletion.SymfonyCompletionPHPProvider-->
+                        <attr name="instanceOf" stringvalue="org.netbeans.spi.editor.completion.CompletionProvider"/>
+                    </file>
+                </folder>
+            </folder>
+            <folder name="xml">
+                <folder name="CompletionProviders">
+                    <file name="org-wangchao-symfonyautocompletion-SymfonyCompletionXmlProvider1.instance">
+                        <!--org.wangchao.symfonyautocompletion.SymfonyCompletionXmlProvider1-->
+                        <attr name="instanceOf" stringvalue="org.netbeans.spi.editor.completion.CompletionProvider"/>
+                    </file>
+                </folder>
+            </folder>
+            <folder name="x-yaml">
+                <folder name="CompletionProviders">
+                    <file name="org-wangchao-symfonyautocompletion-SymfonyCompletionYmlProvider.instance">
+                        <!--org.wangchao.symfonyautocompletion.SymfonyCompletionYmlProvider-->
+                        <attr name="instanceOf" stringvalue="org.netbeans.spi.editor.completion.CompletionProvider"/>
+                    </file>
+                </folder>
+            </folder>
+        </folder>
+    </folder>
+</filesystem>
