@@ -295,7 +295,7 @@ public class SymfonyCompletionPHPProvider implements CompletionProvider {
                                     entityName = sPath.substring(posEntityName + 1, posDotPhp);
                                 }
                                 if ((bundleName.length() > 0) && (entityName.length() > 0)) {
-                                    bundleEntityList.add(bundleName + ":" + entityName);
+                                    bundleEntityList.add(bundleName + "Bundle:" + entityName);
                                 }
                             }
                             return FileVisitResult.CONTINUE;
