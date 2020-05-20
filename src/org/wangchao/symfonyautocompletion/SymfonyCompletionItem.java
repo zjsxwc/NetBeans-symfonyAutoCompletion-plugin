@@ -9,6 +9,7 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import javax.swing.ImageIcon;
 import javax.swing.JToolTip;
 import javax.swing.text.BadLocationException;
@@ -30,6 +31,7 @@ import org.openide.util.*;
  */
 public class SymfonyCompletionItem implements CompletionItem {
 
+    public SymfonyCompletionKeyListener kl;
     public String text;
     private static ImageIcon fieldIcon
             = new ImageIcon(ImageUtilities.loadImage("org/wangchao/symfonyautocompletion/resources/icon.png"));
@@ -43,22 +45,31 @@ public class SymfonyCompletionItem implements CompletionItem {
     
     public static final String SYMFONY_PARAMETER = "SYMFONY_PARAMETER";
     
-    SymfonyCompletionItem(int dotOffset, int caretOffset, String serviceName, String serviceType) {
+    SymfonyCompletionItem(int dotOffset, int caretOffset, String serviceName, String serviceType, SymfonyCompletionKeyListener kl) {
         this.text = serviceName;
         this.dotOffset = dotOffset;
         this.caretOffset = caretOffset;
         this.serviceName = serviceName;
         this.serviceType = serviceType;
+        this.kl = kl;
     }
 
     @Override
     public void defaultAction(JTextComponent jtc) {
         try {
             StyledDocument doc = (StyledDocument) jtc.getDocument();
+            String dotString = doc.getText(dotOffset - 1, 1);
             doc.remove(dotOffset, caretOffset - dotOffset);
+            if (dotString.equals("'") || dotString.equals("\"")) {
+                doc.insertString(dotOffset, dotString, null);
+                doc.remove(dotOffset, dotString.length());
+            }
             doc.insertString(dotOffset, serviceName, null);
             
-            //This statement will close the code completion box:
+            if (kl.shiftKeyPressing) {
+                doc.insertString(dotOffset + serviceName.length(), " /* @var " + serviceType + " */", null);
+            }
+            
             Completion.get().hideAll();
         } catch (BadLocationException ex) {
             Exceptions.printStackTrace(ex);

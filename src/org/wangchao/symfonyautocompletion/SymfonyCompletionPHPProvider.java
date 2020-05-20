@@ -5,6 +5,8 @@
  */
 package org.wangchao.symfonyautocompletion;
 
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.io.BufferedReader;
 import java.io.File;
 import java.util.ArrayList;
@@ -57,12 +59,16 @@ public class SymfonyCompletionPHPProvider implements CompletionProvider {
         return result;
     }
 
+    public SymfonyCompletionKeyListener kl;
     @Override
     public CompletionTask createTask(int queryType, JTextComponent jtc) {
         if (queryType != CompletionProvider.COMPLETION_QUERY_TYPE) {
             return null;
         }
 
+        kl = new SymfonyCompletionKeyListener();
+        jtc.addKeyListener(kl);
+        
         return new AsyncCompletionTask(new AsyncCompletionQuery() {
 
             @Override
@@ -75,10 +81,10 @@ public class SymfonyCompletionPHPProvider implements CompletionProvider {
                     final StyledDocument bDoc = (StyledDocument) document;
                     final int lineStartOffset = getRowFirstNonWhite(bDoc, caretOffset);
                     final char[] line = bDoc.getText(lineStartOffset, caretOffset - lineStartOffset).toCharArray();
-                    final int whiteOffset = indexOfWhite(line);
-                    filter = new String(line, whiteOffset + 1, line.length - whiteOffset - 1);
-                    if (whiteOffset > 0) {
-                        startOffset = lineStartOffset + whiteOffset + 1;
+                    final int whiteOrQuotationOffset = indexOfWhiteOrQuotation(line);
+                    filter = new String(line, whiteOrQuotationOffset + 1, line.length - whiteOrQuotationOffset - 1);
+                    if (whiteOrQuotationOffset > 0) {
+                        startOffset = lineStartOffset + whiteOrQuotationOffset + 1;
                     } else {
                         startOffset = lineStartOffset;
                     }
@@ -138,7 +144,6 @@ public class SymfonyCompletionPHPProvider implements CompletionProvider {
                     }
                 }
 
-                
                 if (appDevDebugProjectContainerContent.length() > 0) {
                     //提取 简单 service
                     int startIndex = 0;
@@ -179,10 +184,9 @@ public class SymfonyCompletionPHPProvider implements CompletionProvider {
                         }
 
                         if (!serviceName.equals("") && serviceName.contains(filter)) {
-                            completionResultSet.addItem(new SymfonyCompletionItem(startOffset, caretOffset, serviceName, serviceType));
+                            completionResultSet.addItem(new SymfonyCompletionItem(startOffset, caretOffset, serviceName, serviceType, kl));
                         }
                     }
-                    
 
                     //提取 运行时构建的复杂service
                     startIndex = 0;
@@ -218,11 +222,10 @@ public class SymfonyCompletionPHPProvider implements CompletionProvider {
                             }
                         }
                         if (!serviceName.equals("") && serviceName.contains(filter)) {
-                            completionResultSet.addItem(new SymfonyCompletionItem(startOffset, caretOffset, serviceName, serviceType));
+                            completionResultSet.addItem(new SymfonyCompletionItem(startOffset, caretOffset, serviceName, serviceType, kl));
                         }
                     }
-                    
-                    
+
                     //提取参数
                     startIndex = appDevDebugProjectContainerContent.indexOf("return array(", 0);
                     int tokenLeft3Pos;
@@ -231,11 +234,11 @@ public class SymfonyCompletionPHPProvider implements CompletionProvider {
                         serviceName = "";
                         String tokenLeft3 = "'";
                         String tokenRight3 = "' => '";
-                        
+
                         tokenRight3Pos = appDevDebugProjectContainerContent.indexOf(tokenRight3, startIndex);
                         if (tokenRight3Pos > 0) {
                             startIndex = tokenRight3Pos + tokenRight3.length();
-                            tokenLeft3Pos = appDevDebugProjectContainerContent.lastIndexOf(tokenLeft3, tokenRight3Pos-1);
+                            tokenLeft3Pos = appDevDebugProjectContainerContent.lastIndexOf(tokenLeft3, tokenRight3Pos - 1);
                             if (tokenLeft3Pos > 0) {
                                 serviceName = appDevDebugProjectContainerContent.substring(tokenLeft3Pos + tokenLeft3.length(), tokenRight3Pos);
                             } else {
@@ -245,11 +248,11 @@ public class SymfonyCompletionPHPProvider implements CompletionProvider {
                             break;
                         }
                         if (!serviceName.equals("") && serviceName.contains(filter)) {
-                            completionResultSet.addItem(new SymfonyCompletionItem(startOffset, caretOffset, serviceName, SymfonyCompletionItem.SYMFONY_PARAMETER));
+                            completionResultSet.addItem(new SymfonyCompletionItem(startOffset, caretOffset, serviceName, SymfonyCompletionItem.SYMFONY_PARAMETER, kl));
                         }
-                        
+
                     }
-                    
+
                 }
 
                 completionResultSet.finish();
@@ -283,10 +286,13 @@ public class SymfonyCompletionPHPProvider implements CompletionProvider {
         return start;
     }
 
-    static int indexOfWhite(char[] line) {
+    static int indexOfWhiteOrQuotation(char[] line) {
         int i = line.length;
         while (--i > -1) {
             final char c = line[i];
+            if ((c == '"') || (c == '\'')) {
+                return i;
+            }
             if (Character.isWhitespace(c)) {
                 return i;
             }

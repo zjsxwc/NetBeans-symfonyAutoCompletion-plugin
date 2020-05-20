@@ -24,7 +24,7 @@ public class SymfonyCompletionDocumentation implements CompletionDocumentation {
     
     @Override
     public String getText() {
-        return "Information about " + item.serviceName + " :\n" + item.serviceType;
+        return "Information about " + item.serviceName + " :\n" + item.serviceType + "\n Also You can keep `shift` pressing to enter the service type";
     }
 
     @Override

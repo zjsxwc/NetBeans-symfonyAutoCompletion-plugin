@@ -14,8 +14,8 @@
             </folder>
             <folder name="xml">
                 <folder name="CompletionProviders">
-                    <file name="org-wangchao-symfonyautocompletion-SymfonyCompletionXmlProvider1.instance">
-                        <!--org.wangchao.symfonyautocompletion.SymfonyCompletionXmlProvider1-->
+                    <file name="org-wangchao-symfonyautocompletion-SymfonyCompletionXmlProvider.instance">
+                        <!--org.wangchao.symfonyautocompletion.SymfonyCompletionXmlProvider-->
                         <attr name="instanceOf" stringvalue="org.netbeans.spi.editor.completion.CompletionProvider"/>
                     </file>
                 </folder>
