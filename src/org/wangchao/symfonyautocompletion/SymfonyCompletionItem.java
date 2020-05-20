@@ -44,6 +44,7 @@ public class SymfonyCompletionItem implements CompletionItem {
     public String serviceType = "";
     
     public static final String SYMFONY_PARAMETER = "SYMFONY_PARAMETER";
+    public static final String SYMFONY_BUNDLE_ENTITY = "SYMFONY_BUNDLE_ENTITY";
     
     SymfonyCompletionItem(int dotOffset, int caretOffset, String serviceName, String serviceType, SymfonyCompletionKeyListener kl) {
         this.text = serviceName;

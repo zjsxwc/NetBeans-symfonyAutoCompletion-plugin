@@ -31,6 +31,14 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.FileSystems;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.PathMatcher;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectUtils;
@@ -112,10 +120,12 @@ public class SymfonyCompletionPHPProvider implements CompletionProvider {
 
                 String appDevDebugProjectContainerPath = "";
                 String appDevDebugProjectContainerContent = "";
+                String projectRootPath = "";
                 for (int i = 0; i < rootFiles.size(); i++) {
                     File rootFile = rootFiles.get(i);
                     String path = rootFile.getPath();
                     String mayDevPHPFilePath = path + File.separator + "var" + File.separator + "cache" + File.separator + "dev" + File.separator + "appDevDebugProjectContainer.php";
+                    projectRootPath = path;
                     File mayDevPHPFile = new File(mayDevPHPFilePath);
                     FileInputStream is = null;
                     StringBuilder stringBuilder = null;
@@ -254,6 +264,65 @@ public class SymfonyCompletionPHPProvider implements CompletionProvider {
                     }
 
                 }
+                
+                
+                
+                //Glob提取Bundle:Entity名
+                final PathMatcher pathMatcher = FileSystems.getDefault()
+                        .getPathMatcher("glob:*Bunlde" + File.separator + "Entity" + File.separator + "*.php");
+                String location = projectRootPath;
+                
+                final ArrayList<String> bundleEntityList = new ArrayList<String>();
+                try {
+                    Files.walkFileTree(Paths.get(location), new SimpleFileVisitor<Path>() {
+                        
+                        @Override
+                        public FileVisitResult visitFile(Path path,
+                                BasicFileAttributes attrs) throws IOException {
+                            String sPath = path.toString();
+                            if (sPath.contains("Bundle"+File.separator+"Entity"+File.separator) && sPath.contains(".php")){
+                                int posBundle = sPath.indexOf("Bundle"+ File.separator);
+                                int posBundleName = sPath.lastIndexOf(File.separator, posBundle);
+                                String bundleName = "";
+                                if ((posBundle >= 0) && (posBundleName >= 0)) {
+                                    bundleName = sPath.substring(posBundleName + 1, posBundle);
+                                }
+                                
+                                int posDotPhp = sPath.indexOf(".php");
+                                int posEntityName = sPath.lastIndexOf(File.separator);
+                                String entityName = "";
+                                if ((posDotPhp >=0)&&(posEntityName >= 0)) {
+                                    entityName = sPath.substring(posEntityName + 1, posDotPhp);
+                                }
+                                if ((bundleName.length() > 0) && (entityName.length() > 0)) {
+                                    bundleEntityList.add(bundleName + ":" + entityName);
+                                }
+                            }
+                            return FileVisitResult.CONTINUE;
+                        }
+                        
+                        @Override
+                        public FileVisitResult visitFileFailed(Path file, IOException exc)
+                                throws IOException {
+                            return FileVisitResult.CONTINUE;
+                        }
+                    });
+                } catch (IOException ex) {
+                    Exceptions.printStackTrace(ex);
+                }
+                if (bundleEntityList.size() > 0) {
+                    for (int i = 0; i < bundleEntityList.size(); i++) {
+                        String bundleEntityName = bundleEntityList.get(i);
+                        if (!bundleEntityName.equals("") && bundleEntityName.contains(filter)) {
+                            completionResultSet.addItem(
+                                    new SymfonyCompletionItem(startOffset, caretOffset, bundleEntityName, SymfonyCompletionItem.SYMFONY_BUNDLE_ENTITY, kl)
+                            );
+                        }
+                    }
+                }
+                
+                
+                
 
                 completionResultSet.finish();
 
