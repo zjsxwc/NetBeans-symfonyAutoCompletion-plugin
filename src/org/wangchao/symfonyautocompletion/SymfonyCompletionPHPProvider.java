@@ -5,12 +5,7 @@
  */
 package org.wangchao.symfonyautocompletion;
 
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.io.BufferedReader;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
@@ -31,11 +26,9 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -77,6 +70,100 @@ public class SymfonyCompletionPHPProvider implements CompletionProvider {
         kl = new SymfonyCompletionKeyListener();
         jtc.addKeyListener(kl);
         
+        
+        ArrayList<File> rootFiles = new ArrayList<File>();
+        try {
+            Project openProjects[] = OpenProjects.getDefault().openProjects().get();
+            if (openProjects.length > 0) {
+                for (int i = 0; i < openProjects.length; i++) {
+                    Project project = openProjects[i];
+                    ArrayList<File> proejctRootFiles = getSourceFolders(project);
+                    rootFiles.addAll(proejctRootFiles);
+                }
+            }
+        } catch (InterruptedException ex) {
+            Exceptions.printStackTrace(ex);
+        } catch (ExecutionException ex) {
+            Exceptions.printStackTrace(ex);
+        }
+
+        String appDevDebugProjectContainerContent = "";
+        String projectRootPath = "";
+        String mayDevPHPFilePath0 = "";
+        for (int i = 0; i < rootFiles.size(); i++) {
+            File rootFile = rootFiles.get(i);
+            String path = rootFile.getPath();
+            mayDevPHPFilePath0 = path + File.separator + "var" + File.separator + "cache" + File.separator + "dev" + File.separator + "appDevDebugProjectContainer.php";
+            projectRootPath = path;
+            File mayDevPHPFile = new File(mayDevPHPFilePath0);
+            FileInputStream is = null;
+            StringBuilder stringBuilder = null;
+            if (mayDevPHPFile.exists()) {
+                try {
+                    is = new FileInputStream(mayDevPHPFile);
+                    InputStreamReader streamReader = new InputStreamReader(is);
+                    BufferedReader reader = new BufferedReader(streamReader);
+                    String line;
+                    stringBuilder = new StringBuilder();
+                    while ((line = reader.readLine()) != null) {
+                        stringBuilder.append(line + "\n");
+                    }
+                    reader.close();
+                    is.close();
+                } catch (FileNotFoundException ex) {
+                    Exceptions.printStackTrace(ex);
+                } catch (IOException ex) {
+                    Exceptions.printStackTrace(ex);
+                }
+
+                appDevDebugProjectContainerContent = String.valueOf(stringBuilder);
+            }
+            if (appDevDebugProjectContainerContent.length() > 0) {
+                break;
+            }
+        }
+        final String mayDevPHPFilePath = mayDevPHPFilePath0;
+        
+        
+        final ArrayList<String> bundleEntityList = new ArrayList<String>();
+        try {
+            Files.walkFileTree(Paths.get(projectRootPath), new SimpleFileVisitor<Path>() {
+
+                @Override
+                public FileVisitResult visitFile(Path path,
+                        BasicFileAttributes attrs) throws IOException {
+                    String sPath = path.toString();
+                    if (sPath.contains("Bundle" + File.separator + "Entity" + File.separator) && sPath.contains(".php")) {
+                        int posBundle = sPath.indexOf("Bundle" + File.separator);
+                        int posBundleName = sPath.lastIndexOf(File.separator, posBundle);
+                        String bundleName = "";
+                        if ((posBundle >= 0) && (posBundleName >= 0)) {
+                            bundleName = sPath.substring(posBundleName + 1, posBundle);
+                        }
+
+                        int posDotPhp = sPath.indexOf(".php");
+                        int posEntityName = sPath.lastIndexOf(File.separator);
+                        String entityName = "";
+                        if ((posDotPhp >= 0) && (posEntityName >= 0)) {
+                            entityName = sPath.substring(posEntityName + 1, posDotPhp);
+                        }
+                        if ((bundleName.length() > 0) && (entityName.length() > 0)) {
+                            bundleEntityList.add(bundleName + "Bundle:" + entityName);
+                        }
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFileFailed(Path file, IOException exc)
+                        throws IOException {
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException ex) {
+            Exceptions.printStackTrace(ex);
+        }
+        
         return new AsyncCompletionTask(new AsyncCompletionQuery() {
 
             @Override
@@ -102,57 +189,32 @@ public class SymfonyCompletionPHPProvider implements CompletionProvider {
 
                 //获取当前symfony项目下的service别名
                 //获取/var/cache/dev/appDevDebugProjectContainer.php路径
-                ArrayList<File> rootFiles = new ArrayList<File>();
-                try {
-                    Project openProjects[] = OpenProjects.getDefault().openProjects().get();
-                    if (openProjects.length > 0) {
-                        for (int i = 0; i < openProjects.length; i++) {
-                            Project project = openProjects[i];
-                            ArrayList<File> proejctRootFiles = getSourceFolders(project);
-                            rootFiles.addAll(proejctRootFiles);
-                        }
-                    }
-                } catch (InterruptedException ex) {
-                    Exceptions.printStackTrace(ex);
-                } catch (ExecutionException ex) {
-                    Exceptions.printStackTrace(ex);
-                }
-
-                String appDevDebugProjectContainerPath = "";
+               
                 String appDevDebugProjectContainerContent = "";
-                String projectRootPath = "";
-                for (int i = 0; i < rootFiles.size(); i++) {
-                    File rootFile = rootFiles.get(i);
-                    String path = rootFile.getPath();
-                    String mayDevPHPFilePath = path + File.separator + "var" + File.separator + "cache" + File.separator + "dev" + File.separator + "appDevDebugProjectContainer.php";
-                    projectRootPath = path;
-                    File mayDevPHPFile = new File(mayDevPHPFilePath);
-                    FileInputStream is = null;
-                    StringBuilder stringBuilder = null;
-                    if (mayDevPHPFile.exists()) {
-                        try {
-                            is = new FileInputStream(mayDevPHPFile);
-                            InputStreamReader streamReader = new InputStreamReader(is);
-                            BufferedReader reader = new BufferedReader(streamReader);
-                            String line;
-                            stringBuilder = new StringBuilder();
-                            while ((line = reader.readLine()) != null) {
-                                stringBuilder.append(line + "\n");
-                            }
-                            reader.close();
-                            is.close();
-                        } catch (FileNotFoundException ex) {
-                            Exceptions.printStackTrace(ex);
-                        } catch (IOException ex) {
-                            Exceptions.printStackTrace(ex);
+                File mayDevPHPFile = new File(mayDevPHPFilePath);
+                FileInputStream is = null;
+                StringBuilder stringBuilder = null;
+                if (mayDevPHPFile.exists()) {
+                    try {
+                        is = new FileInputStream(mayDevPHPFile);
+                        InputStreamReader streamReader = new InputStreamReader(is);
+                        BufferedReader reader = new BufferedReader(streamReader);
+                        String line;
+                        stringBuilder = new StringBuilder();
+                        while ((line = reader.readLine()) != null) {
+                            stringBuilder.append(line + "\n");
                         }
+                        reader.close();
+                        is.close();
+                    } catch (FileNotFoundException ex) {
+                        Exceptions.printStackTrace(ex);
+                    } catch (IOException ex) {
+                        Exceptions.printStackTrace(ex);
+                    }
 
-                        appDevDebugProjectContainerContent = String.valueOf(stringBuilder);
-                    }
-                    if (appDevDebugProjectContainerContent.length() > 0) {
-                        break;
-                    }
+                    appDevDebugProjectContainerContent = String.valueOf(stringBuilder);
                 }
+                
 
                 if (appDevDebugProjectContainerContent.length() > 0) {
                     //提取 简单 service
@@ -267,49 +329,7 @@ public class SymfonyCompletionPHPProvider implements CompletionProvider {
                 
                 
                 
-                //Glob提取Bundle:Entity名
-                final PathMatcher pathMatcher = FileSystems.getDefault()
-                        .getPathMatcher("glob:*Bunlde" + File.separator + "Entity" + File.separator + "*.php");
-                String location = projectRootPath;
-                
-                final ArrayList<String> bundleEntityList = new ArrayList<String>();
-                try {
-                    Files.walkFileTree(Paths.get(location), new SimpleFileVisitor<Path>() {
-                        
-                        @Override
-                        public FileVisitResult visitFile(Path path,
-                                BasicFileAttributes attrs) throws IOException {
-                            String sPath = path.toString();
-                            if (sPath.contains("Bundle"+File.separator+"Entity"+File.separator) && sPath.contains(".php")){
-                                int posBundle = sPath.indexOf("Bundle"+ File.separator);
-                                int posBundleName = sPath.lastIndexOf(File.separator, posBundle);
-                                String bundleName = "";
-                                if ((posBundle >= 0) && (posBundleName >= 0)) {
-                                    bundleName = sPath.substring(posBundleName + 1, posBundle);
-                                }
-                                
-                                int posDotPhp = sPath.indexOf(".php");
-                                int posEntityName = sPath.lastIndexOf(File.separator);
-                                String entityName = "";
-                                if ((posDotPhp >=0)&&(posEntityName >= 0)) {
-                                    entityName = sPath.substring(posEntityName + 1, posDotPhp);
-                                }
-                                if ((bundleName.length() > 0) && (entityName.length() > 0)) {
-                                    bundleEntityList.add(bundleName + "Bundle:" + entityName);
-                                }
-                            }
-                            return FileVisitResult.CONTINUE;
-                        }
-                        
-                        @Override
-                        public FileVisitResult visitFileFailed(Path file, IOException exc)
-                                throws IOException {
-                            return FileVisitResult.CONTINUE;
-                        }
-                    });
-                } catch (IOException ex) {
-                    Exceptions.printStackTrace(ex);
-                }
+
                 if (bundleEntityList.size() > 0) {
                     for (int i = 0; i < bundleEntityList.size(); i++) {
                         String bundleEntityName = bundleEntityList.get(i);
