@@ -141,7 +141,7 @@ public class SymfonyCompletionPHPProvider implements CompletionProvider {
 
         ArrayList<String> bundleEntityListFromCacheData = new ArrayList<String>();
 
-        if (projectRootPath.length() > 0) {
+        if ((projectRootPath.length() > 0)&&(appDevDebugProjectContainerContent.length() > 0)) {
             String cacheDataPath = projectRootPath + File.separator + "var" + File.separator + "cache" + File.separator + "dev" + File.separator + "netbeanSymfonyAutoCompletePluginCacheData";
             String timestampPath = projectRootPath + File.separator + "var" + File.separator + "cache" + File.separator + "dev" + File.separator + "netbeanSymfonyAutoCompletePluginCacheTime";
 
@@ -238,7 +238,7 @@ public class SymfonyCompletionPHPProvider implements CompletionProvider {
                     oos.close();
                     fos.close();
                 } catch (IOException ex) {
-                    Exceptions.printStackTrace(ex);
+                    //not symfony project do nothing
                 }
             }
         }
