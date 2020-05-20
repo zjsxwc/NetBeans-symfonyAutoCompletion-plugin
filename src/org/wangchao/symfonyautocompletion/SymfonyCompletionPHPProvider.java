@@ -24,8 +24,11 @@ import org.openide.util.Exceptions;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -60,7 +63,36 @@ public class SymfonyCompletionPHPProvider implements CompletionProvider {
         return result;
     }
 
+    public static int getCurrentTimestamp() {
+        return (int) (System.currentTimeMillis() / 1000);
+    }
+
+    public static String fileGetContent(String path) {
+        File fileToRead = new File(path);
+
+        String content = null;
+        try (FileReader fileStream = new FileReader(fileToRead);
+                BufferedReader bufferedReader = new BufferedReader(fileStream)) {
+
+            String line = null;
+
+            while ((line = bufferedReader.readLine()) != null) {
+                if (content == null) {
+                    content = "";
+                }
+                content += line + "\n";
+            }
+
+        } catch (FileNotFoundException ex) {
+            //exception Handling
+        } catch (IOException ex) {
+            //exception Handling
+        }
+        return content;
+    }
+
     public SymfonyCompletionKeyListener kl;
+
     @Override
     public CompletionTask createTask(int queryType, JTextComponent jtc) {
         if (queryType != CompletionProvider.COMPLETION_QUERY_TYPE) {
@@ -69,8 +101,7 @@ public class SymfonyCompletionPHPProvider implements CompletionProvider {
 
         kl = new SymfonyCompletionKeyListener();
         jtc.addKeyListener(kl);
-        
-        
+
         ArrayList<File> rootFiles = new ArrayList<File>();
         try {
             Project openProjects[] = OpenProjects.getDefault().openProjects().get();
@@ -96,74 +127,124 @@ public class SymfonyCompletionPHPProvider implements CompletionProvider {
             mayDevPHPFilePath0 = path + File.separator + "var" + File.separator + "cache" + File.separator + "dev" + File.separator + "appDevDebugProjectContainer.php";
             projectRootPath = path;
             File mayDevPHPFile = new File(mayDevPHPFilePath0);
-            FileInputStream is = null;
-            StringBuilder stringBuilder = null;
             if (mayDevPHPFile.exists()) {
-                try {
-                    is = new FileInputStream(mayDevPHPFile);
-                    InputStreamReader streamReader = new InputStreamReader(is);
-                    BufferedReader reader = new BufferedReader(streamReader);
-                    String line;
-                    stringBuilder = new StringBuilder();
-                    while ((line = reader.readLine()) != null) {
-                        stringBuilder.append(line + "\n");
-                    }
-                    reader.close();
-                    is.close();
-                } catch (FileNotFoundException ex) {
-                    Exceptions.printStackTrace(ex);
-                } catch (IOException ex) {
-                    Exceptions.printStackTrace(ex);
+                appDevDebugProjectContainerContent = fileGetContent(mayDevPHPFilePath0);
+                if (appDevDebugProjectContainerContent == null) {
+                    appDevDebugProjectContainerContent = "";
                 }
-
-                appDevDebugProjectContainerContent = String.valueOf(stringBuilder);
             }
             if (appDevDebugProjectContainerContent.length() > 0) {
                 break;
             }
         }
         final String mayDevPHPFilePath = mayDevPHPFilePath0;
-        
-        
-        final ArrayList<String> bundleEntityList = new ArrayList<String>();
-        try {
-            Files.walkFileTree(Paths.get(projectRootPath), new SimpleFileVisitor<Path>() {
 
-                @Override
-                public FileVisitResult visitFile(Path path,
-                        BasicFileAttributes attrs) throws IOException {
-                    String sPath = path.toString();
-                    if (sPath.contains("Bundle" + File.separator + "Entity" + File.separator) && sPath.contains(".php")) {
-                        int posBundle = sPath.indexOf("Bundle" + File.separator);
-                        int posBundleName = sPath.lastIndexOf(File.separator, posBundle);
-                        String bundleName = "";
-                        if ((posBundle >= 0) && (posBundleName >= 0)) {
-                            bundleName = sPath.substring(posBundleName + 1, posBundle);
+        ArrayList<String> bundleEntityListFromCacheData = new ArrayList<String>();
+
+        if (projectRootPath.length() > 0) {
+            String cacheDataPath = projectRootPath + File.separator + "var" + File.separator + "cache" + File.separator + "dev" + File.separator + "netbeanSymfonyAutoCompletePluginCacheData";
+            String timestampPath = projectRootPath + File.separator + "var" + File.separator + "cache" + File.separator + "dev" + File.separator + "netbeanSymfonyAutoCompletePluginCacheTime";
+
+            try {
+                FileInputStream fis = new FileInputStream(cacheDataPath);
+                ObjectInputStream ois = new ObjectInputStream(fis);
+                bundleEntityListFromCacheData = (ArrayList) ois.readObject();
+                ois.close();
+                fis.close();
+            } catch (IOException ioe) {
+                bundleEntityListFromCacheData = new ArrayList<String>();
+            } catch (ClassNotFoundException c) {
+                bundleEntityListFromCacheData = new ArrayList<String>();
+            }
+
+            int timestampCacheData = -1;
+            try {
+                FileInputStream fis = new FileInputStream(timestampPath);
+                ObjectInputStream ois = new ObjectInputStream(fis);
+                timestampCacheData = (int) ois.readObject();
+                ois.close();
+                fis.close();
+            } catch (IOException ioe) {
+                timestampCacheData = -1;
+            } catch (ClassNotFoundException c) {
+                timestampCacheData = -1;
+            }
+
+            boolean doReadDirectory = true;
+            if ((timestampCacheData > 0) && (bundleEntityListFromCacheData.size() > 0)) {
+                if ((getCurrentTimestamp() - timestampCacheData) < 60 * 60) {
+                    doReadDirectory = false;
+                }
+            }
+
+            if (doReadDirectory) {
+                final ArrayList<String> bundleEntityListRealTimeData = new ArrayList<String>();
+                try {
+
+                    Files.walkFileTree(Paths.get(projectRootPath), new SimpleFileVisitor<Path>() {
+
+                        @Override
+                        public FileVisitResult visitFile(Path path,
+                                BasicFileAttributes attrs) throws IOException {
+                            String sPath = path.toString();
+                            if (sPath.contains("Bundle" + File.separator + "Entity" + File.separator) && sPath.contains(".php")) {
+                                int posBundle = sPath.indexOf("Bundle" + File.separator);
+                                int posBundleName = sPath.lastIndexOf(File.separator, posBundle);
+                                String bundleName = "";
+                                if ((posBundle >= 0) && (posBundleName >= 0)) {
+                                    bundleName = sPath.substring(posBundleName + 1, posBundle);
+                                }
+
+                                int posDotPhp = sPath.indexOf(".php");
+                                int posEntityName = sPath.lastIndexOf(File.separator);
+                                String entityName = "";
+                                if ((posDotPhp >= 0) && (posEntityName >= 0)) {
+                                    entityName = sPath.substring(posEntityName + 1, posDotPhp);
+                                }
+                                if ((bundleName.length() > 0) && (entityName.length() > 0)) {
+                                    bundleEntityListRealTimeData.add(bundleName + "Bundle:" + entityName);
+                                }
+                            }
+                            return FileVisitResult.CONTINUE;
                         }
 
-                        int posDotPhp = sPath.indexOf(".php");
-                        int posEntityName = sPath.lastIndexOf(File.separator);
-                        String entityName = "";
-                        if ((posDotPhp >= 0) && (posEntityName >= 0)) {
-                            entityName = sPath.substring(posEntityName + 1, posDotPhp);
+                        @Override
+                        public FileVisitResult visitFileFailed(Path file, IOException exc)
+                                throws IOException {
+                            return FileVisitResult.CONTINUE;
                         }
-                        if ((bundleName.length() > 0) && (entityName.length() > 0)) {
-                            bundleEntityList.add(bundleName + "Bundle:" + entityName);
-                        }
-                    }
-                    return FileVisitResult.CONTINUE;
+                    });
+                } catch (IOException ex) {
+                    Exceptions.printStackTrace(ex);
                 }
 
-                @Override
-                public FileVisitResult visitFileFailed(Path file, IOException exc)
-                        throws IOException {
-                    return FileVisitResult.CONTINUE;
+                if (bundleEntityListRealTimeData.size() > 0) {
+                    bundleEntityListFromCacheData = bundleEntityListRealTimeData;
                 }
-            });
-        } catch (IOException ex) {
-            Exceptions.printStackTrace(ex);
+            }
+
+            if (doReadDirectory && (bundleEntityListFromCacheData.size() > 0)) {
+                try {
+                    FileOutputStream fos = new FileOutputStream(cacheDataPath);
+                    ObjectOutputStream oos = new ObjectOutputStream(fos);
+                    oos.writeObject(bundleEntityListFromCacheData);
+                    oos.close();
+                    fos.close();
+
+                    int timestamp = getCurrentTimestamp();
+                    fos = new FileOutputStream(timestampPath);
+                    oos = new ObjectOutputStream(fos);
+                    oos.writeObject(timestamp);
+                    oos.close();
+                    fos.close();
+                } catch (IOException ex) {
+                    Exceptions.printStackTrace(ex);
+                }
+            }
         }
-        
+
+        final ArrayList<String> bundleEntityList = bundleEntityListFromCacheData;
+
         return new AsyncCompletionTask(new AsyncCompletionQuery() {
 
             @Override
@@ -189,32 +270,14 @@ public class SymfonyCompletionPHPProvider implements CompletionProvider {
 
                 //获取当前symfony项目下的service别名
                 //获取/var/cache/dev/appDevDebugProjectContainer.php路径
-               
                 String appDevDebugProjectContainerContent = "";
                 File mayDevPHPFile = new File(mayDevPHPFilePath);
-                FileInputStream is = null;
-                StringBuilder stringBuilder = null;
                 if (mayDevPHPFile.exists()) {
-                    try {
-                        is = new FileInputStream(mayDevPHPFile);
-                        InputStreamReader streamReader = new InputStreamReader(is);
-                        BufferedReader reader = new BufferedReader(streamReader);
-                        String line;
-                        stringBuilder = new StringBuilder();
-                        while ((line = reader.readLine()) != null) {
-                            stringBuilder.append(line + "\n");
-                        }
-                        reader.close();
-                        is.close();
-                    } catch (FileNotFoundException ex) {
-                        Exceptions.printStackTrace(ex);
-                    } catch (IOException ex) {
-                        Exceptions.printStackTrace(ex);
+                    appDevDebugProjectContainerContent = fileGetContent(mayDevPHPFilePath);
+                    if (appDevDebugProjectContainerContent == null) {
+                        appDevDebugProjectContainerContent = "";
                     }
-
-                    appDevDebugProjectContainerContent = String.valueOf(stringBuilder);
                 }
-                
 
                 if (appDevDebugProjectContainerContent.length() > 0) {
                     //提取 简单 service
@@ -326,9 +389,6 @@ public class SymfonyCompletionPHPProvider implements CompletionProvider {
                     }
 
                 }
-                
-                
-                
 
                 if (bundleEntityList.size() > 0) {
                     for (int i = 0; i < bundleEntityList.size(); i++) {
@@ -340,9 +400,6 @@ public class SymfonyCompletionPHPProvider implements CompletionProvider {
                         }
                     }
                 }
-                
-                
-                
 
                 completionResultSet.finish();
 
