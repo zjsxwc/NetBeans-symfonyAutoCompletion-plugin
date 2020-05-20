@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?><module codename="org.wangchao.symfonyautocompletion">
-    <module_version install_time="1589937889270" last="true" origin="installer" specification_version="1.0">
+    <module_version install_time="1589942610420" last="true" origin="installer" specification_version="1.0">
         <file crc="108943160" name="config/Modules/org-wangchao-symfonyautocompletion.xml"/>
-        <file crc="3820428066" name="modules/org-wangchao-symfonyautocompletion.jar"/>
+        <file crc="589678018" name="modules/org-wangchao-symfonyautocompletion.jar"/>
     </module_version>
 </module>

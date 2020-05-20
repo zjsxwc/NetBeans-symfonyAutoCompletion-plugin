@@ -67,7 +67,7 @@ public class SymfonyCompletionItem implements CompletionItem {
             doc.insertString(dotOffset, serviceName, null);
             
             if (kl.shiftKeyPressing) {
-                doc.insertString(dotOffset + serviceName.length(), " /** @var " + serviceType + " **/", null);
+                doc.insertString(dotOffset + serviceName.length(), " /** @var " + serviceType + " */", null);
             }
             
             Completion.get().hideAll();
