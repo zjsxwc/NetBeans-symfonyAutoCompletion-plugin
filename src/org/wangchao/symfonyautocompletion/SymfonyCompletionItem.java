@@ -59,6 +59,38 @@ public class SymfonyCompletionItem implements CompletionItem {
     public void defaultAction(JTextComponent jtc) {
         try {
             StyledDocument doc = (StyledDocument) jtc.getDocument();
+            
+            String line = "";
+            int curOffset = -1;
+            String curChar = "";
+            while (true) {
+                if ((dotOffset + curOffset) < 0) {
+                    break;
+                }
+                curChar =  doc.getText(dotOffset + curOffset, 1);
+                if ("\n".equals(curChar)) {
+                    break;
+                }
+                line =  curChar + line;
+                curOffset -= 1;
+            }
+            String variableName = "";
+            if (line.length() > 0) {
+                String[] lineSegments = line.split("=");
+                if (lineSegments.length == 2) {
+                    String leftPartLine = lineSegments[0];
+                    String trimedLine = leftPartLine.trim();
+                    if (trimedLine.length() > 0) {
+                        String[] leftLineSegments = trimedLine.split("\\$");
+                        if (leftLineSegments.length == 2) {
+                            variableName = leftLineSegments[1];
+                            variableName = variableName.trim();
+                        }
+                    }
+                }
+            }
+                
+            
             String dotString = doc.getText(dotOffset - 1, 1);
             doc.remove(dotOffset, caretOffset - dotOffset);
             if (dotString.equals("'") || dotString.equals("\"")) {
@@ -68,7 +100,13 @@ public class SymfonyCompletionItem implements CompletionItem {
             doc.insertString(dotOffset, serviceName, null);
             
             if (kl.shiftKeyPressing) {
-                doc.insertString(dotOffset + serviceName.length(), " /** @var " + serviceType + " */", null);
+                if (variableName.length() > 0) {
+                    int variableNamePos = line.indexOf(variableName);
+                    String whiteCharString = line.substring(0, variableNamePos - 1);
+                    doc.insertString(dotOffset + curOffset + 1, whiteCharString +"/** @var " + serviceType + " $" + variableName + " */\n", null);
+                } else {
+                    doc.insertString(dotOffset + serviceName.length(), " /** @var " + serviceType + " */", null);
+                }
             }
             
             Completion.get().hideAll();

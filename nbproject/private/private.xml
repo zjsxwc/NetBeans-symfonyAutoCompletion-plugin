@@ -3,11 +3,7 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/home/wangchao/NetBeansProjects/symfonyAutoCompletion/src/org/wangchao/symfonyautocompletion/Bundle.properties</file>
-            <file>file:/home/wangchao/NetBeansProjects/symfonyAutoCompletion/manifest.mf</file>
             <file>file:/home/wangchao/NetBeansProjects/symfonyAutoCompletion/src/org/wangchao/symfonyautocompletion/SymfonyCompletionItem.java</file>
-            <file>file:/home/wangchao/NetBeansProjects/symfonyAutoCompletion/src/org/wangchao/symfonyautocompletion/SymfonyCompletionKeyListener.java</file>
-            <file>file:/home/wangchao/NetBeansProjects/symfonyAutoCompletion/src/org/wangchao/symfonyautocompletion/SymfonyCompletionDocumentation.java</file>
             <file>file:/home/wangchao/NetBeansProjects/symfonyAutoCompletion/src/org/wangchao/symfonyautocompletion/SymfonyCompletionPHPProvider.java</file>
         </group>
     </open-files>
