@@ -1,4 +1,4 @@
-Netbeans 上 Symfony 自动补全插件
+Netbeans 上 Symfony3.x 自动补全插件
 
 <p align="center">
     <a href="https://i.loli.net/2020/05/19/CRNiKa5bLZu7T6y.png"  target="_blank">
