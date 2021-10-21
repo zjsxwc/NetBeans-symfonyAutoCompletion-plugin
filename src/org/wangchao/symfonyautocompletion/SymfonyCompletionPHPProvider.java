@@ -257,7 +257,7 @@ public class SymfonyCompletionPHPProvider implements CompletionProvider {
                     final StyledDocument bDoc = (StyledDocument) document;
                     final int lineStartOffset = getRowFirstNonWhite(bDoc, caretOffset);
                     final char[] line = bDoc.getText(lineStartOffset, caretOffset - lineStartOffset).toCharArray();
-                    final int whiteOrQuotationOffset = indexOfWhiteOrQuotation(line);
+                    final int whiteOrQuotationOffset = indexOfWhiteOrMeaningless(line);
                     filter = new String(line, whiteOrQuotationOffset + 1, line.length - whiteOrQuotationOffset - 1);
                     if (whiteOrQuotationOffset > 0) {
                         startOffset = lineStartOffset + whiteOrQuotationOffset + 1;
@@ -432,11 +432,11 @@ public class SymfonyCompletionPHPProvider implements CompletionProvider {
         return start;
     }
 
-    static int indexOfWhiteOrQuotation(char[] line) {
+    static int indexOfWhiteOrMeaningless(char[] line) {
         int i = line.length;
         while (--i > -1) {
             final char c = line[i];
-            if ((c == '"') || (c == '\'')) {
+            if ((c == '"') || (c == '\'') || (c == '@') || (c == '%') || (c == ';') || (c == '!') || (c == '#') || (c == '$') || (c == '&') || (c == '~') || (c == '+') || (c == '-') || (c == '(') || (c == ')') || (c == '^') || (c == '*')) {
                 return i;
             }
             if (Character.isWhitespace(c)) {
