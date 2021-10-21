@@ -100,12 +100,20 @@ public class SymfonyCompletionItem implements CompletionItem {
             doc.insertString(dotOffset, serviceName, null);
             
             if (kl.shiftKeyPressing) {
+                String curServiceType = serviceType;
+                if (serviceType.equals(SYMFONY_BUNDLE_ENTITY)) {
+                    //change OrderBundle:UserOrder to  \OrderBundle\Repository\UserOrderRepository
+                    String[] serviceNameSeg = serviceName.split(":");
+                    if (serviceNameSeg.length == 2) {
+                        curServiceType = "\\"+serviceNameSeg[0]+"\\Repository\\"+serviceNameSeg[1]+"Repository";
+                    }
+                }
                 if (variableName.length() > 0) {
                     int variableNamePos = line.indexOf(variableName);
                     String whiteCharString = line.substring(0, variableNamePos - 1);
-                    doc.insertString(dotOffset + curOffset + 1, whiteCharString +"/** @var " + serviceType + " $" + variableName + " */\n", null);
+                    doc.insertString(dotOffset + curOffset + 1, whiteCharString +"/** @var " + curServiceType + " $" + variableName + " */\n", null);
                 } else {
-                    doc.insertString(dotOffset + serviceName.length(), " /** @var " + serviceType + " */", null);
+                    doc.insertString(dotOffset + serviceName.length(), " /** @var " + curServiceType + " */", null);
                 }
             }
             
