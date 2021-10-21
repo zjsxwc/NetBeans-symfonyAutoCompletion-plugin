@@ -1,5 +1,7 @@
 Netbeans 上 Symfony3.x 自动补全插件
 
+>好像Symfony4 之后没有Bundle了，也就不需要对这些容器服务别名额外的支持，直接用php语法就行，所以对我来说支持到Symfony3就够用了
+
 <p align="center">
     <a href="https://i.loli.net/2020/05/19/CRNiKa5bLZu7T6y.png"  target="_blank">
       <img src="https://i.loli.net/2020/05/19/CRNiKa5bLZu7T6y.png" width=600>
