@@ -1,4 +1,4 @@
-Netbeans 上 Symfony3.x 自动补全插件
+Netbeans 上 Symfony3.x 对php、xml、yml、yaml 文件自动补全的插件。
 
 >好像Symfony4 之后没有Bundle了，也就不需要对这些容器服务别名额外的支持，直接用php语法就行，所以对我来说支持到Symfony3就够用了
 
