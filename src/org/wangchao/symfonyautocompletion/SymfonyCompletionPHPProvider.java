@@ -93,6 +93,11 @@ public class SymfonyCompletionPHPProvider implements CompletionProvider {
 
     public SymfonyCompletionKeyListener kl;
 
+    
+    public String projectRootPath = "";
+    public String appDevDebugProjectContainerContent = "";
+    public String mayDevPHPFilePath = "";
+    
     @Override
     public CompletionTask createTask(int queryType, JTextComponent jtc) {
         if (queryType != CompletionProvider.COMPLETION_QUERY_TYPE) {
@@ -118,17 +123,17 @@ public class SymfonyCompletionPHPProvider implements CompletionProvider {
             Exceptions.printStackTrace(ex);
         }
 
-        String appDevDebugProjectContainerContent = "";
-        String projectRootPath = "";
-        String mayDevPHPFilePath0 = "";
+        projectRootPath = "";
+        appDevDebugProjectContainerContent = "";
+        mayDevPHPFilePath = "";
         for (int i = 0; i < rootFiles.size(); i++) {
             File rootFile = rootFiles.get(i);
             String path = rootFile.getPath();
-            mayDevPHPFilePath0 = path + File.separator + "var" + File.separator + "cache" + File.separator + "dev" + File.separator + "appDevDebugProjectContainer.php";
+            mayDevPHPFilePath = path + File.separator + "var" + File.separator + "cache" + File.separator + "dev" + File.separator + "appDevDebugProjectContainer.php";
             projectRootPath = path;
-            File mayDevPHPFile = new File(mayDevPHPFilePath0);
+            File mayDevPHPFile = new File(mayDevPHPFilePath);
             if (mayDevPHPFile.exists()) {
-                appDevDebugProjectContainerContent = fileGetContent(mayDevPHPFilePath0);
+                appDevDebugProjectContainerContent = fileGetContent(mayDevPHPFilePath);
                 if (appDevDebugProjectContainerContent == null) {
                     appDevDebugProjectContainerContent = "";
                 }
@@ -137,7 +142,7 @@ public class SymfonyCompletionPHPProvider implements CompletionProvider {
                 break;
             }
         }
-        final String mayDevPHPFilePath = mayDevPHPFilePath0;
+        final String tmpAppDevDebugProjectContainerContent = appDevDebugProjectContainerContent;
 
         ArrayList<String> bundleEntityListFromCacheData = new ArrayList<String>();
 
@@ -244,7 +249,187 @@ public class SymfonyCompletionPHPProvider implements CompletionProvider {
         }
 
         final ArrayList<String> bundleEntityList = bundleEntityListFromCacheData;
+        
+        
+        
+        
+        
+        
+        
+        
+        class ServiceNameTypeTuple {
+            public String serviceName;
+            public String serviceType;
+            ServiceNameTypeTuple(String serviceName, String serviceType) {
+                this.serviceName = serviceName;
+                this.serviceType = serviceType;
+            }
+        }
+        ArrayList<ServiceNameTypeTuple> serviceNameTypeTupleList = new ArrayList<ServiceNameTypeTuple>();
+        
+        String cacheServiceNameTypeTupleDataPath = projectRootPath + File.separator + "var" + File.separator + "cache" + File.separator + "dev" + File.separator + "netbeanSymfonyAutoCompletePluginCacheServiceNameTypeTuple";
+        String timestampServiceNameTypeTuplePath = projectRootPath + File.separator + "var" + File.separator + "cache" + File.separator + "dev" + File.separator + "netbeanSymfonyAutoCompletePluginCacheServiceNameTypeTupleTime";
+        try {
+            FileInputStream fis = new FileInputStream(cacheServiceNameTypeTupleDataPath);
+            ObjectInputStream ois = new ObjectInputStream(fis);
+            serviceNameTypeTupleList = (ArrayList<ServiceNameTypeTuple>) ois.readObject();
+            ois.close();
+            fis.close();
+        } catch (IOException ioe) {
+            serviceNameTypeTupleList = new ArrayList<ServiceNameTypeTuple>();
+        } catch (ClassNotFoundException c) {
+            serviceNameTypeTupleList = new ArrayList<ServiceNameTypeTuple>();
+        }
 
+        int timestampCacheServiceNameTypeTuple = -1;
+        try {
+            FileInputStream fis = new FileInputStream(timestampServiceNameTypeTuplePath);
+            ObjectInputStream ois = new ObjectInputStream(fis);
+            timestampCacheServiceNameTypeTuple = (int) ois.readObject();
+            ois.close();
+            fis.close();
+        } catch (IOException ioe) {
+            timestampCacheServiceNameTypeTuple = -1;
+        } catch (ClassNotFoundException c) {
+            timestampCacheServiceNameTypeTuple = -1;
+        }
+
+        boolean doConstructServiceNameTypeTupleList = true;
+        if ((timestampCacheServiceNameTypeTuple > 0) && (serviceNameTypeTupleList.size() > 0)) {
+            if ((getCurrentTimestamp() - timestampCacheServiceNameTypeTuple) < 60 * 60) {
+                doConstructServiceNameTypeTupleList = false;
+            }
+        }
+        
+        if (doConstructServiceNameTypeTupleList && (appDevDebugProjectContainerContent.length() > 0)) {
+            //提取 简单 service
+            int startIndex = 0;
+            int tokenRightPos;
+            String serviceName = "";
+            while (true) {
+                serviceName = "";
+
+                String tokenLeft = "return $this->services['";
+                int tokenLeftPos = appDevDebugProjectContainerContent.indexOf(tokenLeft, startIndex);
+                if (tokenLeftPos > 0) {
+
+                    String tokenRight = "']";
+                    tokenRightPos = appDevDebugProjectContainerContent.indexOf(tokenRight, tokenLeftPos + tokenLeft.length());
+                    if (tokenRightPos > 0) {
+                        serviceName = appDevDebugProjectContainerContent.substring(tokenLeftPos + tokenLeft.length(), tokenRightPos);
+                    } else {
+                        break;
+                    }
+
+                    startIndex = tokenRightPos;
+                } else {
+                    break;
+                }
+
+                String serviceType = "";
+                if (serviceName.length() > 0) {
+                    String tokenAtReturn = "@return";
+                    int atReturnPos = appDevDebugProjectContainerContent.lastIndexOf(tokenAtReturn, tokenLeftPos);
+                    if (atReturnPos > 0) {
+                        String tokenNewLine = "\n";
+                        int newLinePos = appDevDebugProjectContainerContent.indexOf(tokenNewLine, atReturnPos);
+                        if (newLinePos > 0) {
+                            serviceType = appDevDebugProjectContainerContent.substring(atReturnPos + tokenAtReturn.length(), newLinePos);
+                        }
+                    }
+
+                }
+                if (!serviceName.equals("")) {
+                    serviceNameTypeTupleList.add(new ServiceNameTypeTuple(serviceName, serviceType));
+                }
+            }
+
+            //提取 运行时构建的复杂service
+            startIndex = 0;
+            int tokenLeft2Pos;
+            int tokenRight2Pos;
+            while (true) {
+                serviceName = "";
+                String tokenLeft2 = "$this->services['";
+                String tokenRight2 = "'] = $instance = ";
+                tokenRight2Pos = appDevDebugProjectContainerContent.indexOf(tokenRight2, startIndex);
+                if (tokenRight2Pos > 0) {
+                    startIndex = tokenRight2Pos + tokenRight2.length();
+                    tokenLeft2Pos = appDevDebugProjectContainerContent.lastIndexOf(tokenLeft2, tokenRight2Pos);
+                    if (tokenLeft2Pos > 0) {
+                        serviceName = appDevDebugProjectContainerContent.substring(tokenLeft2Pos + tokenLeft2.length(), tokenRight2Pos);
+                    } else {
+                        break;
+                    }
+                } else {
+                    break;
+                }
+
+                String serviceType = "";
+                if (serviceName.length() > 0) {
+                    String tokenAtReturn = "@return";
+                    int atReturnPos = appDevDebugProjectContainerContent.lastIndexOf(tokenAtReturn, tokenLeft2Pos);
+                    if (atReturnPos > 0) {
+                        String tokenNewLine = "\n";
+                        int newLinePos = appDevDebugProjectContainerContent.indexOf(tokenNewLine, atReturnPos);
+                        if (newLinePos > 0) {
+                            serviceType = appDevDebugProjectContainerContent.substring(atReturnPos + tokenAtReturn.length(), newLinePos);
+                        }
+                    }
+                }
+                if (!serviceName.equals("")) {
+                    serviceNameTypeTupleList.add(new ServiceNameTypeTuple(serviceName, serviceType));
+                }
+            }
+
+            //提取参数
+            startIndex = appDevDebugProjectContainerContent.indexOf("return array(", 0);
+            int tokenLeft3Pos;
+            int tokenRight3Pos;
+            while (true) {
+                serviceName = "";
+                String tokenLeft3 = "'";
+                String tokenRight3 = "' => '";
+
+                tokenRight3Pos = appDevDebugProjectContainerContent.indexOf(tokenRight3, startIndex);
+                if (tokenRight3Pos > 0) {
+                    startIndex = tokenRight3Pos + tokenRight3.length();
+                    tokenLeft3Pos = appDevDebugProjectContainerContent.lastIndexOf(tokenLeft3, tokenRight3Pos - 1);
+                    if (tokenLeft3Pos > 0) {
+                        serviceName = appDevDebugProjectContainerContent.substring(tokenLeft3Pos + tokenLeft3.length(), tokenRight3Pos);
+                    } else {
+                        break;
+                    }
+                } else {
+                    break;
+                }
+                if (!serviceName.equals("")) {
+                    serviceNameTypeTupleList.add(new ServiceNameTypeTuple(serviceName, SymfonyCompletionItem.SYMFONY_PARAMETER));
+                }
+            }
+
+        }
+        
+        if (doConstructServiceNameTypeTupleList && (serviceNameTypeTupleList.size()> 0)) {
+            try {
+                FileOutputStream fos = new FileOutputStream(cacheServiceNameTypeTupleDataPath);
+                ObjectOutputStream oos = new ObjectOutputStream(fos);
+                oos.writeObject(serviceNameTypeTupleList);
+                oos.close();
+                fos.close();
+
+                int timestamp = getCurrentTimestamp();
+                fos = new FileOutputStream(timestampServiceNameTypeTuplePath);
+                oos = new ObjectOutputStream(fos);
+                oos.writeObject(timestamp);
+                oos.close();
+                fos.close();
+            } catch (IOException ex) {
+                //not symfony project do nothing
+            }
+        }
+        
+        final ArrayList<ServiceNameTypeTuple> finalServiceNameTypeTupleList = serviceNameTypeTupleList;
         return new AsyncCompletionTask(new AsyncCompletionQuery() {
 
             @Override
@@ -268,126 +453,13 @@ public class SymfonyCompletionPHPProvider implements CompletionProvider {
                     Exceptions.printStackTrace(ex);
                 }
 
-                //获取当前symfony项目下的service别名
-                //获取/var/cache/dev/appDevDebugProjectContainer.php路径
-                String appDevDebugProjectContainerContent = "";
-                File mayDevPHPFile = new File(mayDevPHPFilePath);
-                if (mayDevPHPFile.exists()) {
-                    appDevDebugProjectContainerContent = fileGetContent(mayDevPHPFilePath);
-                    if (appDevDebugProjectContainerContent == null) {
-                        appDevDebugProjectContainerContent = "";
-                    }
-                }
-
-                if (appDevDebugProjectContainerContent.length() > 0) {
-                    //提取 简单 service
-                    int startIndex = 0;
-                    int tokenRightPos;
-                    String serviceName = "";
-                    while (true) {
-                        serviceName = "";
-
-                        String tokenLeft = "return $this->services['";
-                        int tokenLeftPos = appDevDebugProjectContainerContent.indexOf(tokenLeft, startIndex);
-                        if (tokenLeftPos > 0) {
-
-                            String tokenRight = "']";
-                            tokenRightPos = appDevDebugProjectContainerContent.indexOf(tokenRight, tokenLeftPos + tokenLeft.length());
-                            if (tokenRightPos > 0) {
-                                serviceName = appDevDebugProjectContainerContent.substring(tokenLeftPos + tokenLeft.length(), tokenRightPos);
-                            } else {
-                                break;
-                            }
-
-                            startIndex = tokenRightPos;
-                        } else {
-                            break;
-                        }
-
-                        String serviceType = "";
-                        if (serviceName.length() > 0) {
-                            String tokenAtReturn = "@return";
-                            int atReturnPos = appDevDebugProjectContainerContent.lastIndexOf(tokenAtReturn, tokenLeftPos);
-                            if (atReturnPos > 0) {
-                                String tokenNewLine = "\n";
-                                int newLinePos = appDevDebugProjectContainerContent.indexOf(tokenNewLine, atReturnPos);
-                                if (newLinePos > 0) {
-                                    serviceType = appDevDebugProjectContainerContent.substring(atReturnPos + tokenAtReturn.length(), newLinePos);
-                                }
-                            }
-
-                        }
-
-                        if (!serviceName.equals("") && serviceName.contains(filter)) {
-                            completionResultSet.addItem(new SymfonyCompletionItem(startOffset, caretOffset, serviceName, serviceType, kl));
+                if (finalServiceNameTypeTupleList.size() > 0) {
+                    for (int i = 0; i < finalServiceNameTypeTupleList.size(); i++) {
+                        ServiceNameTypeTuple snt = finalServiceNameTypeTupleList.get(i);
+                        if (!snt.serviceName.equals("") && snt.serviceName.contains(filter)) {
+                            completionResultSet.addItem(new SymfonyCompletionItem(startOffset, caretOffset, snt.serviceName, snt.serviceType, kl));
                         }
                     }
-
-                    //提取 运行时构建的复杂service
-                    startIndex = 0;
-                    int tokenLeft2Pos;
-                    int tokenRight2Pos;
-                    while (true) {
-                        serviceName = "";
-                        String tokenLeft2 = "$this->services['";
-                        String tokenRight2 = "'] = $instance = ";
-                        tokenRight2Pos = appDevDebugProjectContainerContent.indexOf(tokenRight2, startIndex);
-                        if (tokenRight2Pos > 0) {
-                            startIndex = tokenRight2Pos + tokenRight2.length();
-                            tokenLeft2Pos = appDevDebugProjectContainerContent.lastIndexOf(tokenLeft2, tokenRight2Pos);
-                            if (tokenLeft2Pos > 0) {
-                                serviceName = appDevDebugProjectContainerContent.substring(tokenLeft2Pos + tokenLeft2.length(), tokenRight2Pos);
-                            } else {
-                                break;
-                            }
-                        } else {
-                            break;
-                        }
-
-                        String serviceType = "";
-                        if (serviceName.length() > 0) {
-                            String tokenAtReturn = "@return";
-                            int atReturnPos = appDevDebugProjectContainerContent.lastIndexOf(tokenAtReturn, tokenLeft2Pos);
-                            if (atReturnPos > 0) {
-                                String tokenNewLine = "\n";
-                                int newLinePos = appDevDebugProjectContainerContent.indexOf(tokenNewLine, atReturnPos);
-                                if (newLinePos > 0) {
-                                    serviceType = appDevDebugProjectContainerContent.substring(atReturnPos + tokenAtReturn.length(), newLinePos);
-                                }
-                            }
-                        }
-                        if (!serviceName.equals("") && serviceName.contains(filter)) {
-                            completionResultSet.addItem(new SymfonyCompletionItem(startOffset, caretOffset, serviceName, serviceType, kl));
-                        }
-                    }
-
-                    //提取参数
-                    startIndex = appDevDebugProjectContainerContent.indexOf("return array(", 0);
-                    int tokenLeft3Pos;
-                    int tokenRight3Pos;
-                    while (true) {
-                        serviceName = "";
-                        String tokenLeft3 = "'";
-                        String tokenRight3 = "' => '";
-
-                        tokenRight3Pos = appDevDebugProjectContainerContent.indexOf(tokenRight3, startIndex);
-                        if (tokenRight3Pos > 0) {
-                            startIndex = tokenRight3Pos + tokenRight3.length();
-                            tokenLeft3Pos = appDevDebugProjectContainerContent.lastIndexOf(tokenLeft3, tokenRight3Pos - 1);
-                            if (tokenLeft3Pos > 0) {
-                                serviceName = appDevDebugProjectContainerContent.substring(tokenLeft3Pos + tokenLeft3.length(), tokenRight3Pos);
-                            } else {
-                                break;
-                            }
-                        } else {
-                            break;
-                        }
-                        if (!serviceName.equals("") && serviceName.contains(filter)) {
-                            completionResultSet.addItem(new SymfonyCompletionItem(startOffset, caretOffset, serviceName, SymfonyCompletionItem.SYMFONY_PARAMETER, kl));
-                        }
-
-                    }
-
                 }
 
                 if (bundleEntityList.size() > 0) {
