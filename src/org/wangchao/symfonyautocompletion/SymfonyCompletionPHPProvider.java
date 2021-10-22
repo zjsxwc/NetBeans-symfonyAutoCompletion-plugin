@@ -235,10 +235,14 @@ public class SymfonyCompletionPHPProvider implements CompletionProvider {
                     oos.writeObject(bundleEntityListFromCacheData);
                     oos.close();
                     fos.close();
-
+                } catch (IOException ex) {
+                    //not symfony project do nothing
+                }
+                
+                try {
                     int timestamp = getCurrentTimestamp();
-                    fos = new FileOutputStream(timestampPath);
-                    oos = new ObjectOutputStream(fos);
+                    FileOutputStream fos = new FileOutputStream(timestampPath);
+                    ObjectOutputStream oos = new ObjectOutputStream(fos);
                     oos.writeObject(timestamp);
                     oos.close();
                     fos.close();
@@ -249,12 +253,6 @@ public class SymfonyCompletionPHPProvider implements CompletionProvider {
         }
 
         final ArrayList<String> bundleEntityList = bundleEntityListFromCacheData;
-        
-        
-        
-        
-        
-        
         
         
         class ServiceNameTypeTuple {
@@ -268,7 +266,7 @@ public class SymfonyCompletionPHPProvider implements CompletionProvider {
         ArrayList<ServiceNameTypeTuple> serviceNameTypeTupleList = new ArrayList<ServiceNameTypeTuple>();
         
         String cacheServiceNameTypeTupleDataPath = projectRootPath + File.separator + "var" + File.separator + "cache" + File.separator + "dev" + File.separator + "netbeanSymfonyAutoCompletePluginCacheServiceNameTypeTuple";
-        String timestampServiceNameTypeTuplePath = projectRootPath + File.separator + "var" + File.separator + "cache" + File.separator + "dev" + File.separator + "netbeanSymfonyAutoCompletePluginCacheServiceNameTypeTupleTime";
+        String timestampServiceNameTypeTuplePath = projectRootPath + File.separator + "var" + File.separator + "cache" + File.separator + "dev" + File.separator + "netbeanSymfonyAutoCompletePluginCacheServiceNameTypeTime";
         try {
             FileInputStream fis = new FileInputStream(cacheServiceNameTypeTupleDataPath);
             ObjectInputStream ois = new ObjectInputStream(fis);
@@ -417,10 +415,14 @@ public class SymfonyCompletionPHPProvider implements CompletionProvider {
                 oos.writeObject(serviceNameTypeTupleList);
                 oos.close();
                 fos.close();
-
+            } catch (IOException ex) {
+                //not symfony project do nothing
+            }
+            
+            try {
                 int timestamp = getCurrentTimestamp();
-                fos = new FileOutputStream(timestampServiceNameTypeTuplePath);
-                oos = new ObjectOutputStream(fos);
+                FileOutputStream fos = new FileOutputStream(timestampServiceNameTypeTuplePath);
+                ObjectOutputStream oos = new ObjectOutputStream(fos);
                 oos.writeObject(timestamp);
                 oos.close();
                 fos.close();
