@@ -1,12 +1,15 @@
 Netbeans 上 Symfony3.x 对php、xml、yml、yaml 文件自动补全的插件。
 
 >好像Symfony4 之后没有Bundle了，也就不需要对这些容器服务别名额外的支持，直接用php语法就行，所以对我来说支持到Symfony3就够用了。
+>
 >如果Symfony5要使用这个插件就必须多干一步就是如下创建个软链接：
+>
 >```
 > cd var/cache/dev/
 > ln -s Container2no6kMq/App_KernelDevDebugContainer.php  appDevDebugProjectContainer.php
 >```
 >把Symfony5编译后的`var/cache/dev/Container<build_hash_suffix>/App_KernelDevDebugContainer.php`软链接到`var/cache/dev/appDevDebugProjectContainer.php`,
+>
 >让插件能够读取到appDevDebugProjectContainer.php文件。
 >
 
